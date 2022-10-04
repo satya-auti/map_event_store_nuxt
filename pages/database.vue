@@ -12,7 +12,9 @@
     <!-- Toggle Bar code -->
     <div class="left1 bg-gray">
       <div class="float-right">
-        <button class="rounded-xl p-2 bg-black text-white">Refresh</button>
+        <button @click="getData" class="rounded-xl p-2 bg-black text-white">
+          Refresh
+        </button>
       </div>
       <br />
       <div class="">
@@ -173,6 +175,7 @@ let info = reactive({
   color: "",
   geom: {},
   changer: false,
+  marker: null,
   deleteIndex: null,
   mapEventData: [],
   selectedId: {},
@@ -183,11 +186,7 @@ let db = reactive({
     name: "",
     desc: "",
     properties: "",
-    geom: {
-      //   type: value.type,
-      //   crs: value.crs,
-      //   coordinates: [],
-    },
+    geom: {},
   },
 });
 
@@ -227,11 +226,9 @@ async function getMapData(tempMap: mapboxgl.Map) {
     console.log("1", e);
     console.log("2", e.features[0].id);
     console.log("3 Geometric", e.features[0].geometry);
-
     // info.geom = e.features[0];
     info.geom = e.features[0].geometry;
   }
-
   //   info.changer = false;
 }
 
@@ -280,20 +277,20 @@ function showDataOnMap(e, index) {
   console.log("index", index);
   console.log(e.target.checked);
 
-  //   console.log("data.layers ", data.mapEvent);
   console.log("data.layers 1", info.mapEventData);
   //   let selectedId;
   let ID1: string;
   if (e.target.checked == true) {
     info.changer = false;
 
-    var x;
     let type;
     let type1;
     let colorPick;
     let selectedObj: any;
     let flyToLocation;
     let flyToLocation1;
+
+    // get selected layers color and type and flying coordinates
     let colorSelect = info.mapEventData.filter((ele) => {
       if (ele.id == index) {
         // info.selectedId = ele;
@@ -315,6 +312,7 @@ function showDataOnMap(e, index) {
     console.log("type", type);
 
     let latlngArr = [];
+    // checks If the type is LineString
     if (type == "LineString") {
       console.log("It is LineString");
       latlngArr = flyToLocation[0];
@@ -334,33 +332,55 @@ function showDataOnMap(e, index) {
       });
     }
 
-    // If the type is Polygon
+    // checks If the type is Polygon
     if (type == "Polygon") {
       console.log("It is Polygon");
       latlngArr = flyToLocation[0][0];
+
+      // Fit to Bounds starts
+      let coordinates = flyToLocation;
+      console.log("coordinates->1 ", coordinates);
+      console.log("dmo", coordinates[0][0], coordinates[0][1]);
+
+      // Create a 'LngLatBounds' with both corners at the first coordinate.
+      // const bounds = new mapboxgl.LngLatBounds(coordinates[0]);
+      const bounds = new mapboxgl.LngLatBounds(coordinates[0], coordinates[1]);
+      // Extend the 'LngLatBounds' to include every coordinate in the bounds result.
+      for (const coord of coordinates) {
+        bounds.extend(coord);
+      }
+
+      data.map.fitBounds(bounds, {
+        padding: 200,
+      });
     }
 
-    // If the type is Point
+    // checks If the type is Point
     if (type == "Point") {
       console.log("It is Point");
       console.log("point data", flyToLocation);
 
       latlngArr = [flyToLocation[0], flyToLocation[1]];
-      //   var x = data.map.marker([latlngArr[0], latlngArr[1]]).addTo(data.map);
-      x = new mapboxgl.Marker({
-        draggable: true,
-        color: colorPick,
-        // color: "#" + (Math.random().toString(16) + "000000").substring(2, 8),
-      })
-        .setLngLat([latlngArr[0], latlngArr[1]])
-        //   .setLngLat([74.04931277036667, 19.266912177018096])
-        .addTo(data.map);
+      info.mapEventData.forEach((ele) => {
+        if (ele.id === index) {
+          ele.mapMarker = new mapboxgl.Marker({
+            draggable: true,
+            color: colorPick,
+            // color: "#" + (Math.random().toString(16) + "000000").substring(2, 8),
+          })
+            .setLngLat([latlngArr[0], latlngArr[1]])
+            //   .setLngLat([74.04931277036667, 19.266912177018096])
+            .addTo(data.map);
 
-      // // Fly to a random location
-      data.map.flyTo({
-        center: [latlngArr[0], latlngArr[1]],
-        zoom: 6,
-        essential: true, // this animation is considered essential with respect to prefers-reduced-motion
+          // // Fly to a layers point location
+          data.map.flyTo({
+            center: [latlngArr[0], latlngArr[1]],
+            zoom: 5,
+            essential: true, // this animation is considered essential with respect to prefers-reduced-motion
+            padding: 20,
+          });
+          //   info.marker = ele.mapMarker;
+        }
       });
     }
 
@@ -369,12 +389,12 @@ function showDataOnMap(e, index) {
     // console.log("exact value", latlng[0], latlng[1]);
     console.log("exact value latlng array ", latlngArr);
 
-    // Fly to a random location
-    data.map.flyTo({
-      center: [latlngArr[0], latlngArr[1]],
-      zoom: 6,
-      essential: true, // this animation is considered essential with respect to prefers-reduced-motion
-    });
+    // // Fly to a random location
+    // data.map.flyTo({
+    //   center: [latlngArr[0], latlngArr[1]],
+    //   zoom: 6,
+    //   essential: true, // this animation is considered essential with respect to prefers-reduced-motion
+    // });
 
     // // Fit to Bounds starts
     // let coordinates = flyToLocation;
@@ -402,22 +422,6 @@ function showDataOnMap(e, index) {
     console.log("geometry", geometry);
     console.log("geom co -> ", geometry.coordinates);
 
-    // let geometryData = {
-    //   type: "FeatureCollection",
-    //   features: [
-    //     {
-    //       type: "Feature",
-    //       properties: {},
-    //       geometry:
-    //         //   geometry,
-    //         {
-    //           type: type,
-    //           coordinates: [geometry.coordinates],
-    //         },
-    //     },
-    //   ],
-    // };
-
     // let sId: string = selectedId.id;
     // let randonNo = Math.round(Math.random() * 1e9);
     // console.log("randonNo", randonNo);
@@ -425,23 +429,6 @@ function showDataOnMap(e, index) {
     // data.map.addSource(selectedObj.id, {
     //   type: "geojson",
     //   data: geometry,
-    // });
-
-    // data.map.addSource(selectedObj.id, {
-    //   type: "geojson",
-    //   data: {
-    //     type: "FeatureCollection",
-    //     features: [
-    //       {
-    //         type: "Feature",
-    //         properties: {},
-    //         geometry: {
-    //           type: type,
-    //           coordinates: [geometry.coordinates],
-    //         },
-    //       },
-    //     ],
-    //   },
     // });
 
     //   //   Polygon Starts
@@ -501,6 +488,8 @@ function showDataOnMap(e, index) {
     let layerId;
     info.mapEventData.filter((ele) => {
       if (ele.id == index) {
+        // checks object property available or not if available then remove marker
+        ele?.mapMarker?.remove();
         let getType = ele.geom.type;
         layerId = getType + index;
       }
@@ -514,20 +503,35 @@ async function deleteLayer(id) {
   info.show = false;
   console.log("delete", id);
   let layerId;
+  let markerData;
+  let mapMarker;
+
+  //   to get selected or unselected layers id
   info.mapEventData.filter((ele) => {
     if (ele.id == id) {
+      //   ele.mapMarker = ele.mapMarker = new mapboxgl.Marker({
+      //     draggable: true,
+      //     color: none,
+      //     // color: "#" + (Math.random().toString(16) + "000000").substring(2, 8),
+      //   })
+      //     .setLngLat([latlngArr[0], latlngArr[1]])
+      //     //   .setLngLat([74.04931277036667, 19.266912177018096])
+      //     .addTo(data.map);
+      //   mapMarker = info.marker;
       let getType = ele.geom.type;
       layerId = getType + id;
     }
   });
+  //   after confirmation delete layer
   var confirmation = confirm(" Click OK to delete data !!!");
-
   if (confirmation == true) {
     let deleteMapData = await $fetch("http://localhost:3050/map/remove/" + id, {
       method: "DELETE",
     });
     console.log("deleted Data", deleteMapData);
     info.changer = true;
+    // mapMarker.remove();
+    // info.marker.remove();
     data.map.removeLayer(layerId);
     data.map.removeSource(layerId);
     getData();
@@ -537,7 +541,7 @@ async function deleteLayer(id) {
     alert("Something goes wrong!!!");
   }
 }
-// Function Cancel
+// Function Cancel // hide popup after cancel hit
 function Cancel() {
   info.show = false;
   getData();
