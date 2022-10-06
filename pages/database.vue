@@ -137,6 +137,10 @@
 import VMap from "v-mapbox";
 import mapboxgl from "mapbox-gl";
 import MapboxDraw from "@mapbox/mapbox-gl-draw";
+import MapboxGeocoder from "@mapbox/mapbox-gl-geocoder";
+// import * as turf from "@turf/turf";
+import turf from "@turf/turf";
+// import { centroid, point, distance, polygon, lineString } from "@turf/turf";
 
 const data: any = reactive({
   map: {} as mapboxgl.Map,
@@ -205,6 +209,19 @@ async function getMapData(tempMap: mapboxgl.Map) {
     info.changer = false;
   }
   info.changer = false;
+
+  //   Geo Coder search start
+
+  // Add the control to the map.
+  data.map.addControl(
+    new MapboxGeocoder({
+      accessToken:
+        "pk.eyJ1Ijoic2F0eWEtYXV0aSIsImEiOiJjbDdwdnFqMWIwMWF3M3BxZ3dvaTZlNW5yIn0.wrAe-_808WZm-CBKVTwfIw",
+      mapboxgl: mapboxgl,
+    })
+  );
+  // Geo Coder Ends
+
   //   data.map.addControl(new mapboxgl.NavigationControl());
   var Draw = new MapboxDraw({
     displayControlsDefault: true,
@@ -342,13 +359,37 @@ function showDataOnMap(e, index) {
       console.log("coordinates->1 ", coordinates);
       console.log("dmo", coordinates[0][0], coordinates[0][1]);
 
-      // Create a 'LngLatBounds' with both corners at the first coordinate.
-      // const bounds = new mapboxgl.LngLatBounds(coordinates[0]);
-      const bounds = new mapboxgl.LngLatBounds(coordinates[0], coordinates[1]);
-      // Extend the 'LngLatBounds' to include every coordinate in the bounds result.
-      for (const coord of coordinates) {
-        bounds.extend(coord);
-      }
+      //   coordinates[0].map((el) => {
+      //     console.log("ele -> el ", el[0], el[1], coordinates[0]);
+      //   });
+      //   // Create a 'LngLatBounds' with both corners at the first coordinate.
+      //   // const bounds = new mapboxgl.LngLatBounds(coordinates[0]);
+      //   const bounds = new mapboxgl.LngLatBounds(coordinates[0]);
+      //   // Extend the 'LngLatBounds' to include every coordinate in the bounds result.
+      //   for (const coord of coordinates) {
+      //     bounds.extend(coord);
+      //   }
+      //   console.log("bounds", bounds);
+
+      //   data.map.fitBounds(bounds, {
+      //     padding: 200,
+      //   });
+      //   console.log("single ", coordinates[0][0]);
+      //   let try3 = [
+      //     coordinates[0][1],
+      //     coordinates[0][3],
+      //     // coordinates[0][0],
+      //     // coordinates[0][4],
+      //   ];
+      //   data.map.fitBounds(try3, {
+      //     padding: 200,
+      //   });
+
+      var bounds = new mapboxgl.LngLatBounds();
+
+      //   data.map.features.forEach(function (feature) {
+      bounds.extend(coordinates[0]);
+      //   });
 
       data.map.fitBounds(bounds, {
         padding: 200,
@@ -416,7 +457,6 @@ function showDataOnMap(e, index) {
 
     console.log("selected color", colorSelect);
     console.log("Pick color", colorPick);
-
     console.log("checked", selectedObj.id);
     const geometry: any = selectedObj.geom;
     console.log("geometry", geometry);
@@ -446,7 +486,7 @@ function showDataOnMap(e, index) {
     ID1 = type + selectedObj.id.toString();
     console.log("ID1", ID1);
 
-    data.map.addSource(ID1, {
+    let dataPoints = data.map.addSource(ID1, {
       type: "geojson",
       data: {
         type: "FeatureCollection",
@@ -474,6 +514,9 @@ function showDataOnMap(e, index) {
         ],
       },
     });
+
+    // var bbox = turf.polygon(dataPoints);
+    // data.map.fitBounds(bbox, { padding: 20 });
 
     data.map.addLayer({
       id: ID1,
