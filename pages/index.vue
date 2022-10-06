@@ -10,7 +10,7 @@
   <!-- Full Screen View -->
   <div class="main">
     <!-- Toggle Bar code -->
-    <div class="left1 bg-gray">
+    <div class="left1 bg-slate-500">
       <div class="float-right">
         <button @click="getData" class="rounded-xl p-2 bg-black text-white">
           Refresh
@@ -20,7 +20,7 @@
       <div class="">
         <h1 class="font-bold ml-2">Stored Events</h1>
         <br />
-        <table class="text-sm">
+        <table class="text-sm text-white">
           <tr>
             <th>Name</th>
             <th>Desc</th>
@@ -544,6 +544,7 @@ async function deleteLayer(id) {
 // Function Cancel // hide popup after cancel hit
 function Cancel() {
   info.show = false;
+  data.draw.deleteAll();
   getData();
 }
 </script>
